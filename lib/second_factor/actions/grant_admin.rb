@@ -6,6 +6,7 @@ module SecondFactor::Actions
 
     def initialize(params, current_user, guardian)
       @user = User.find_by(id: params[:user_id])
+      raise Discourse::NotFound if !@user
       @current_user = current_user
       @guardian = guardian
     end

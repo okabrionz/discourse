@@ -3,7 +3,7 @@
 class SecondFactor::AuthManagerResult
   STATUSES = {
     no_second_factor: 1,
-    second_factor_successful: 3,
+    second_factor_auth_successful: 3,
   }.freeze
 
   def no_second_factors_enabled?
@@ -11,7 +11,7 @@ class SecondFactor::AuthManagerResult
   end
 
   def second_factor_auth_successful?
-    @status == STATUSES[:second_factor_successful]
+    @status == STATUSES[:second_factor_auth_successful]
   end
 
   def set_status(status)

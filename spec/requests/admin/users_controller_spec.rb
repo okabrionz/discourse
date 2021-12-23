@@ -369,19 +369,36 @@ RSpec.describe Admin::UsersController do
 
       put "/admin/users/#{another_user.id}/grant_admin.json"
 
-      expect(response.parsed_body["failed"]).to eq("FAILED")
+      expect(response.parsed_body["second_factor_challenge_nonce"]).to be_present
       expect(another_user.reload.admin).to eq(false)
     end
 
     it 'grants admin if second factor is correct' do
       user_second_factor = Fabricate(:user_second_factor_totp, user: admin)
 
-      put "/admin/users/#{another_user.id}/grant_admin.json", params: {
+      put "/admin/users/#{another_user.id}/grant_admin.json"
+      nonce = response.parsed_body["second_factor_challenge_nonce"]
+      forum_session_cookie = response.cookies["_forum_session"]
+      expect(nonce).to be_present
+      expect(another_user.reload.admin).to eq(false)
+
+      post "/session/2fa.json", params: {
+        nonce: nonce,
         second_factor_token: ROTP::TOTP.new(user_second_factor.data).now,
         second_factor_method: UserSecondFactor.methods[:totp]
       }
+      res = response.parsed_body
+      expect(response.status).to eq(200)
+      expect(res["success"]).to eq(true)
+      expect(res["callback_method"]).to eq("PUT")
+      expect(res["callback_path"]).to eq("/admin/users/#{another_user.id}/grant_admin.json")
+      expect(res["redirect_path"]).to eq("/admin/users/#{another_user.id}/#{another_user.username}")
+      expect(another_user.reload.admin).to eq(false)
 
-      expect(response.parsed_body["success"]).to eq("OK")
+      put "/admin/users/#{another_user.id}/grant_admin.json", params: {
+        second_factor_nonce: nonce
+      }
+      expect(response.status).to eq(200)
       expect(another_user.reload.admin).to eq(true)
     end
   end

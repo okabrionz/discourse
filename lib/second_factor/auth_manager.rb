@@ -29,10 +29,10 @@ class SecondFactor::AuthManager
     if !allowed_methods.any? { |m| @current_user.valid_second_factor_method_for_user?(m) }
       action = @action_class.new(params, @current_user, @guardian)
       action.no_second_factors_enabled!
-      return create_result(:no_second_factor)
+      create_result(:no_second_factor)
     elsif nonce = params[:second_factor_nonce].presence
       second_factor_auth_successful(nonce, secure_session)
-      return create_result(:second_factor_auth_successful)
+      create_result(:second_factor_auth_successful)
     else
       nonce = initiate_second_factor_auth(params, secure_session, request)
       raise SecondFactorRequired.new(nonce: nonce)
@@ -90,6 +90,6 @@ class SecondFactor::AuthManager
   end
 
   def create_result(status)
-    AuthManagerResult.new.tap { |res| res.set_status(status) }
+    SecondFactor::AuthManagerResult.new.tap { |res| res.set_status(status) }
   end
 end
